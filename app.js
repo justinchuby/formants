@@ -296,10 +296,7 @@ function processAudio() {
   }
 
   drawChart();
-  // Delay start to let audio pipeline warm up
-    setTimeout(() => {
-      animFrameId = requestAnimationFrame(processAudio);
-    }, 500);
+  animFrameId = requestAnimationFrame(processAudio);
 }
 
 // ── Controls ────────────────────────────────────────────────────
