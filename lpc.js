@@ -160,7 +160,7 @@ function findRoots(a, order) {
  * @param {number} [lpcOrder=12] - LPC order (rule of thumb: 2 + sampleRate/1000)
  * @returns {{ f1: number, f2: number } | null} - Formant frequencies or null if detection fails
  */
-export function extractFormants(frame, sampleRate, lpcOrder = 12) {
+export function extractFormants(frame, sampleRate, lpcOrder = 30) {
   if (frame.length < lpcOrder + 1) return null;
 
   // Check if frame has enough energy (silence detection)
