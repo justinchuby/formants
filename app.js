@@ -300,9 +300,7 @@ async function startRecording() {
     audioCtx = new AudioContext();
     await audioCtx.resume(); // Chrome autoplay policy requires explicit resume
     sourceNode = audioCtx.createMediaStreamSource(stream);
-    window._audioCtx = audioCtx;
-    window._sourceNode = sourceNode;
-    window._analyserNode = analyserNode;
+    
     analyserNode = audioCtx.createAnalyser();
     analyserNode.fftSize = FRAME_SIZE * 2;
     // timeDomainBuffer must match fftSize
@@ -313,6 +311,9 @@ async function startRecording() {
     silentGain.gain.value = 0;
     analyserNode.connect(silentGain);
     silentGain.connect(audioCtx.destination);
+    window._audioCtx = audioCtx;
+    window._sourceNode = sourceNode;
+    window._analyserNode = analyserNode;
 
     isRecording = true;
     smoothF1 = 0;
