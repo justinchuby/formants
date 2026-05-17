@@ -219,6 +219,17 @@ function processAudio() {
 
   analyserNode.getFloatTimeDomainData(timeDomainBuffer);
 
+  // Debug: check if we are getting data
+  let maxVal = 0;
+  for (let i = 0; i < timeDomainBuffer.length; i++) {
+    const abs = Math.abs(timeDomainBuffer[i]);
+    if (abs > maxVal) maxVal = abs;
+  }
+  if (maxVal < 1e-10 && !window._warnedSilence) {
+    console.warn("[Formants] Audio buffer is all zeros. Mic may not be working. Max value:", maxVal);
+    window._warnedSilence = true;
+  }
+
   const result = extractFormants(timeDomainBuffer, audioCtx.sampleRate);
 
   if (result) {
