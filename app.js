@@ -1,5 +1,6 @@
 import { VOWELS, findNearestVowel } from "./vowels.js";
 import { extractFormants } from "./lpc.js";
+import { createTractRenderer, formantsToTongue } from "./tract.js";
 
 // ── Chart configuration ──────────────────────────────────────────
 const CANVAS_W = 520;
@@ -259,9 +260,14 @@ function processAudio() {
     nameEl.textContent = vowel.name;
     f1ValueEl.textContent = `${Math.round(smoothF1)} Hz`;
     f2ValueEl.textContent = `${Math.round(smoothF2)} Hz`;
+
+    // Update vocal tract
+    const tongue = formantsToTongue(smoothF1, smoothF2);
+    tractRenderer.update(tongue.tongueIndex, tongue.tongueDiameter);
   } else {
     currentFormants = null;
     symbolEl.classList.add("silent");
+    tractRenderer.reset();
   }
 
   drawChart();
@@ -312,6 +318,7 @@ function stopRecording() {
   statusDot.classList.remove("live");
   statusText.textContent = "Ready";
   symbolEl.classList.add("silent");
+  tractRenderer.reset();
 
   drawChart(); // Final redraw showing trace
 }
@@ -334,8 +341,13 @@ btnClear.addEventListener("click", () => {
   nameEl.textContent = "";
   f1ValueEl.textContent = "—";
   f2ValueEl.textContent = "—";
+  tractRenderer.reset();
   drawChart();
 });
+
+// ── Tract renderer ──────────────────────────────────────────────
+const tractCanvas = document.getElementById("tract");
+const tractRenderer = createTractRenderer(tractCanvas);
 
 // ── Initial draw ────────────────────────────────────────────────
 drawChart();
