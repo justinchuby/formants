@@ -296,7 +296,10 @@ function processAudio() {
   }
 
   drawChart();
-  animFrameId = requestAnimationFrame(processAudio);
+  // Delay start to let audio pipeline warm up
+    setTimeout(() => {
+      animFrameId = requestAnimationFrame(processAudio);
+    }, 500);
 }
 
 // ── Controls ────────────────────────────────────────────────────
@@ -337,7 +340,10 @@ async function startRecording() {
     statusDot.classList.add("live");
     statusText.textContent = "Listening…";
 
-    animFrameId = requestAnimationFrame(processAudio);
+    // Delay start to let audio pipeline warm up
+    setTimeout(() => {
+      animFrameId = requestAnimationFrame(processAudio);
+    }, 500);
   } catch (err) {
     statusText.textContent = `Mic error: ${err.message}`;
   }
