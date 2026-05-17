@@ -169,7 +169,7 @@ export function extractFormants(frame, sampleRate, lpcOrder = 12) {
     energy += frame[i] * frame[i];
   }
   energy /= frame.length;
-  if (energy < 1e-6) return null;
+  if (energy < 1e-8) return null;
 
   // LPC pipeline
   const emphasized = preEmphasis(frame);
