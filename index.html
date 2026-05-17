@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Formant Vowel Chart</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Formant Vowel Chart</h1>
+    <p>Real-time vowel tracking via formant analysis</p>
+  </header>
+
+  <div class="main">
+    <div class="chart-container">
+      <canvas id="chart"></canvas>
+    </div>
+
+    <div class="sidebar">
+      <div class="current-vowel">
+        <div class="symbol silent" id="vowel-symbol">·</div>
+        <div class="name" id="vowel-name"></div>
+      </div>
+
+      <div class="formant-display">
+        <div class="label">F1</div>
+        <div class="value" id="f1-value">—</div>
+        <div class="label">F2</div>
+        <div class="value" id="f2-value">—</div>
+      </div>
+
+      <div class="controls">
+        <button id="btn-record">Start</button>
+        <button id="btn-clear">Clear Trace</button>
+      </div>
+
+      <div class="status">
+        <span class="dot" id="status-dot"></span>
+        <span id="status-text">Ready</span>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
