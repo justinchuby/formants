@@ -302,6 +302,12 @@ async function startRecording() {
     analyserNode = audioCtx.createAnalyser();
     analyserNode.fftSize = FRAME_SIZE * 2;
     sourceNode.connect(analyserNode);
+    // Some browsers require connection to destination for processing
+    // Use a silent gain node to avoid feedback
+    const silentGain = audioCtx.createGain();
+    silentGain.gain.value = 0;
+    analyserNode.connect(silentGain);
+    silentGain.connect(audioCtx.destination);
 
     isRecording = true;
     smoothF1 = 0;
