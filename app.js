@@ -298,6 +298,7 @@ async function startRecording() {
     });
 
     audioCtx = new AudioContext();
+    await audioCtx.resume(); // Chrome autoplay policy requires explicit resume
     sourceNode = audioCtx.createMediaStreamSource(stream);
     analyserNode = audioCtx.createAnalyser();
     analyserNode.fftSize = FRAME_SIZE * 2;
