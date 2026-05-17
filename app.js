@@ -217,6 +217,7 @@ const SMOOTH_ALPHA = 0.35; // 0 = no smoothing, 1 = no change
 
 function processAudio() {
   if (!isRecording) return;
+  try {
 
   analyserNode.getFloatTimeDomainData(timeDomainBuffer);
 
@@ -296,6 +297,12 @@ function processAudio() {
   }
 
   drawChart();
+  } catch (err) {
+    if (!window._errorLogged) {
+      console.error('[Formants] processAudio error:', err);
+      window._errorLogged = true;
+    }
+  }
   animFrameId = requestAnimationFrame(processAudio);
 }
 
