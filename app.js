@@ -258,6 +258,11 @@ function processAudio() {
   }
 
   const result = extractFormants(timeDomainBuffer, audioCtx.sampleRate);
+  if (!window._lpcLogCount) window._lpcLogCount = 0;
+  if (window._lpcLogCount < 5) {
+    window._lpcLogCount++;
+    console.log('[Formants] LPC result:', result, 'maxVal:', Math.max(...Array.from(timeDomainBuffer).map(Math.abs)).toFixed(6));
+  }
 
   if (result) {
     // Apply smoothing
