@@ -220,6 +220,19 @@ function processAudio() {
 
   analyserNode.getFloatTimeDomainData(timeDomainBuffer);
 
+  // Debug: check if this analyserNode is the same as the window one
+  if (!window._checkedAnalyser) {
+    window._checkedAnalyser = true;
+    console.log('[Formants] processAudio analyserNode === window._analyserNode:', analyserNode === window._analyserNode);
+    console.log('[Formants] analyserNode fftSize:', analyserNode?.fftSize);
+    // Try reading directly with a fresh buffer
+    const testBuf = new Float32Array(analyserNode.fftSize);
+    analyserNode.getFloatTimeDomainData(testBuf);
+    let testMax = 0;
+    for (let i = 0; i < testBuf.length; i++) testMax = Math.max(testMax, Math.abs(testBuf[i]));
+    console.log('[Formants] Direct read in processAudio max:', testMax);
+  }
+
   // Debug: log first 3 frames
   if (!window._frameCount) window._frameCount = 0;
   window._frameCount++;
