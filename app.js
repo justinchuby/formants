@@ -220,6 +220,18 @@ function processAudio() {
 
   analyserNode.getFloatTimeDomainData(timeDomainBuffer);
 
+  // Debug: log first 3 frames
+  if (!window._frameCount) window._frameCount = 0;
+  window._frameCount++;
+  if (window._frameCount <= 3) {
+    let maxVal = 0;
+    for (let i = 0; i < timeDomainBuffer.length; i++) {
+      const abs = Math.abs(timeDomainBuffer[i]);
+      if (abs > maxVal) maxVal = abs;
+    }
+    console.log(`[Formants] Frame ${window._frameCount}: bufferLen=${timeDomainBuffer.length}, maxVal=${maxVal.toFixed(8)}, sampleRate=${audioCtx.sampleRate}`);
+  }
+
   // Debug: check if we are getting data
   let maxVal = 0;
   for (let i = 0; i < timeDomainBuffer.length; i++) {
@@ -348,6 +360,8 @@ btnClear.addEventListener("click", () => {
 // ── Tract renderer ──────────────────────────────────────────────
 const tractCanvas = document.getElementById("tract");
 const tractRenderer = createTractRenderer(tractCanvas);
+console.log("[Formants] Tract canvas:", tractCanvas, "size:", tractCanvas?.width, "x", tractCanvas?.height);
+console.log("[Formants] Tract renderer:", tractRenderer);
 
 // ── Initial draw ────────────────────────────────────────────────
 drawChart();
