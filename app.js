@@ -208,7 +208,7 @@ function drawCurrentPoint() {
 
 // ── Audio processing ────────────────────────────────────────────
 const FRAME_SIZE = 1024; // ~23ms at 44100Hz
-const timeDomainBuffer = new Float32Array(FRAME_SIZE);
+const timeDomainBuffer = new Float32Array(FRAME_SIZE * 2);
 
 // Smoothing for formant values (simple exponential)
 let smoothF1 = 0;
@@ -301,6 +301,7 @@ async function startRecording() {
     sourceNode = audioCtx.createMediaStreamSource(stream);
     analyserNode = audioCtx.createAnalyser();
     analyserNode.fftSize = FRAME_SIZE * 2;
+    // timeDomainBuffer must match fftSize
     sourceNode.connect(analyserNode);
     // Some browsers require connection to destination for processing
     // Use a silent gain node to avoid feedback
