@@ -298,10 +298,11 @@ async function startRecording() {
     });
 
     audioCtx = new AudioContext();
-    window._audioCtx = audioCtx;
-    window._sourceNode = sourceNode;
     await audioCtx.resume(); // Chrome autoplay policy requires explicit resume
     sourceNode = audioCtx.createMediaStreamSource(stream);
+    window._audioCtx = audioCtx;
+    window._sourceNode = sourceNode;
+    window._analyserNode = analyserNode;
     analyserNode = audioCtx.createAnalyser();
     analyserNode.fftSize = FRAME_SIZE * 2;
     // timeDomainBuffer must match fftSize
