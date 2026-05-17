@@ -289,6 +289,7 @@ function processAudio() {
 
     // Update vocal tract
     const tongue = formantsToTongue(smoothF1, smoothF2);
+    console.log("[Formants] tract update:", tongue.tongueIndex.toFixed(1), tongue.tongueDiameter.toFixed(2));
     tractRenderer.update(tongue.tongueIndex, tongue.tongueDiameter);
   } else {
     currentFormants = null;
