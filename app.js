@@ -263,7 +263,7 @@ function processAudio() {
 
   let result = isSilent ? null : extractFormants(timeDomainBuffer, audioCtx.sampleRate);
   // Reject clearly invalid formant values
-  if (result && (result.f1 > 1000 || result.f1 < 150)) result = null;
+  if (result && (result.f1 > 1200 || result.f1 < 100)) result = null;
 
   // Clear median history during silence to prevent stale values
   if (isSilent) {
