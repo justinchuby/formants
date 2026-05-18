@@ -284,10 +284,12 @@ function processAudio() {
     const mid = Math.floor(sorted1.length / 2);
     result.f1 = sorted1[mid];
     result.f2 = sorted2[mid];
-    // Rate limiting: reject sudden jumps
+    // Rate limiting: cap speed of change (allows transition but not teleportation)
     if (smoothF1 > 0) {
-      if (Math.abs(result.f1 - smoothF1) > 300) result.f1 = smoothF1;
-      if (Math.abs(result.f2 - smoothF2) > 500) result.f2 = smoothF2;
+      const maxDeltaF1 = 150; // Hz per frame
+      const maxDeltaF2 = 250;
+      result.f1 = smoothF1 + Math.max(-maxDeltaF1, Math.min(maxDeltaF1, result.f1 - smoothF1));
+      result.f2 = smoothF2 + Math.max(-maxDeltaF2, Math.min(maxDeltaF2, result.f2 - smoothF2));
     }
   }
 
