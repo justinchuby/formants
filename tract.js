@@ -226,7 +226,7 @@ export function formantsToTongue(f1, f2) {
   // F1 → tongueDiameter: low F1 = tongue high (small diameter), high F1 = tongue low (large diameter)
   const tongueDiameter = 1.0 + ((f1 - 270) / (730 - 270)) * (3.5 - 1.0);
   // F2 → tongueIndex: high F2 = tongue front (low index), low F2 = tongue back (high index)
-  const tongueIndex = 40 - ((f2 - 870) / (2290 - 870)) * (40 - 12);
+  const tongueIndex = 12 + ((f2 - 870) / (2290 - 870)) * (40 - 12);
   return {
     tongueDiameter: Math.max(1.0, Math.min(3.5, tongueDiameter)),
     tongueIndex: Math.max(12, Math.min(40, tongueIndex)),
