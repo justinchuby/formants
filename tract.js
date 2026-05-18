@@ -1,323 +1,391 @@
 /**
- * Vocal tract sagittal cross-section renderer.
+ * Vocal tract renderer — Pink Trombone-style polar arc visualization.
  *
- * Inspired by Pink Trombone (Neil Thapen) — uses smooth bezier curves,
- * nasal cavity outline, and warm pink/flesh colour scheme.
+ * Closely follows the drawing approach from Neil Thapen's Pink Trombone:
+ * polar coordinate system where 44 segments curve from glottis (bottom)
+ * around to lips (left), with outer wall (palate/pharynx) and inner wall
+ * (tongue surface) enclosing the pink-filled cavity.
  *
- * Parameters from formant frequencies:
- *   tongueIndex    – front/back position  (12 = front, 40 = back)
- *   tongueDiameter – height / openness    (1.0 = high/close, 3.5 = low/open)
+ * API:  createTractRenderer(canvas) → { update(tongueIndex, tongueDiameter), reset() }
+ *
+ * tongueIndex:    12 (front) … 40 (back) — position along the arc
+ * tongueDiameter: 1.0 (high/close) … 3.5 (low/open) — tube narrowing
  */
 
-// ── Constants ────────────────────────────────────────────────────
-const TRACT_W = 300;
-const TRACT_H = 300;
-
-const N = 44;
+// ── Tract geometry constants ─────────────────────────────────────
+const N = 44;                 // number of tract segments
 const BLADE_START = 10;
 const TIP_START = 32;
 const LIP_START = 39;
 const NOSE_START = 17;
 const NOSE_LENGTH = 28;
+const NOSE_OFFSET = 0.8;     // how far above oral tract the nose sits
 
-// ── Colour scheme (warm pink / flesh tones) ─────────────────────
-const BG = "#fafafa";
-const CAVITY_FILL = "rgba(252, 228, 236, 0.6)";     // light pink fill
-const OUTLINE_COLOUR = "#c070c6";                     // Purple-pink (like Pink Trombone)
-const TONGUE_COLOUR = "#e8578a";                      // accent pink
-const TONGUE_FILL = "rgba(232, 87, 138, 0.15)";
-const NOSE_FILL = "rgba(252, 228, 236, 0.4)";
-const NOSE_OUTLINE = "rgba(192, 112, 198, 0.6)";
-const LABEL_COLOUR = "rgba(0, 0, 0, 0.2)";
-const TONGUE_LABEL_COLOUR = "rgba(232, 87, 138, 0.4)";
+// ── Canvas dimensions ────────────────────────────────────────────
+const W = 600;
+const H = 500;
 
-// ── Polar layout (same geometry as Pink Trombone) ────────────────
-const ANGLE_OFFSET = -0.24;
+// ── Polar layout (matches Pink Trombone's TractUI) ───────────────
+const ORIGIN = { x: 340, y: 460 };
+const RADIUS = 298;           // base radius of the arc
+const SCALE = 60;             // diameter→pixel scaling
 const ANGLE_SCALE = 0.64;
-const ORIGIN_X = 0.46;
-const ORIGIN_Y = 0.82;
-const RADIUS_FRAC = 0.55;
-const SCALE_FRAC = 0.115;
-const NOSE_OFFSET = 0.8;
+const ANGLE_OFFSET = -0.25;
 
-// ── Geometry helpers ─────────────────────────────────────────────
+// ── Colour palette ───────────────────────────────────────────────
+const BG              = "#fafafa";
+const CAVITY_FILL     = "rgba(232, 87, 138, 0.15)";  // light pink cavity
+const PALATE_STROKE   = "#a855f7";                     // purple outer wall
+const TONGUE_STROKE   = "#e8578a";                     // pink inner wall
+const TONGUE_DOT      = "#e8578a";                     // tongue position
+const NOSE_FILL       = "rgba(168, 85, 247, 0.08)";   // very light purple
+const NOSE_STROKE     = "rgba(168, 85, 247, 0.45)";   // lighter purple
+const TONGUE_CTRL_BG  = "#ffeef5";                     // pale pink tongue zone
+const TONGUE_CTRL_DOT = "rgba(168, 85, 247, 0.3)";    // orchid grid dots
+const LABEL_COLOUR    = "rgba(120, 120, 120, 0.45)";
+
+// ── Rest diameters for 44 segments ───────────────────────────────
 
 function restDiameters() {
   const d = new Float64Array(N);
   for (let i = 0; i < N; i++) {
-    if (i < (7 * N) / 44 - 0.5) d[i] = 0.6;
-    else if (i < (12 * N) / 44) d[i] = 1.1;
-    else d[i] = 1.5;
+    if (i < 7 - 0.5)       d[i] = 0.6;
+    else if (i < 12)        d[i] = 1.1;
+    else                    d[i] = 1.5;
   }
+  // Lip flare
+  d[N - 1] = 1.5;
   return d;
 }
 
 const REST = restDiameters();
 
-/** Nose rest diameters (simplified from Pink Trombone). */
 function noseRestDiameters() {
   const d = new Float64Array(NOSE_LENGTH);
   for (let i = 0; i < NOSE_LENGTH; i++) {
-    const frac = i / NOSE_LENGTH;
-    d[i] = Math.min(1.9, 0.4 + 1.6 * frac);
+    d[i] = Math.min(1.9, 0.4 + 1.6 * (i / NOSE_LENGTH));
   }
-  d[0] = 0.4; // velum opening
+  d[0] = 0.4;
   return d;
 }
 
 const NOSE_REST = noseRestDiameters();
 
+/** Compute tract diameters with tongue shaping applied. */
 function targetDiameters(tongueIndex, tongueDiameter) {
   const d = new Float64Array(N);
   for (let i = 0; i < N; i++) d[i] = REST[i];
 
   for (let i = BLADE_START; i < LIP_START; i++) {
     const t = (1.1 * Math.PI * (tongueIndex - i)) / (TIP_START - BLADE_START);
-    const fixedDiam = REST[i];
-    let curve = (1.5 - fixedDiam + tongueDiameter) * Math.cos(t);
+    const fixed = REST[i];
+    let curve = (1.5 - fixed + tongueDiameter) * Math.cos(t);
     if (i === BLADE_START - 1 || i === LIP_START) curve *= 0.8;
     if (i === BLADE_START || i === LIP_START - 1) curve *= 0.94;
-    d[i] = Math.max(0, fixedDiam + curve);
+    d[i] = Math.max(0, fixed + curve);
   }
   return d;
 }
 
-// ── Polar → Cartesian ────────────────────────────────────────────
+// ── Polar coordinate helpers (same math as Pink Trombone) ────────
 
-function polarToXY(i, d, w, h) {
-  const angle = ANGLE_OFFSET + (i * ANGLE_SCALE * Math.PI) / (LIP_START - 1);
-  const radius = RADIUS_FRAC * h;
-  const scale = SCALE_FRAC * h;
-  const r = radius - scale * d;
+function getAngle(index) {
+  return ANGLE_OFFSET + (index * ANGLE_SCALE * Math.PI) / (LIP_START - 1);
+}
+
+function getRadius(diameter) {
+  return RADIUS - SCALE * diameter;
+}
+
+function toXY(index, diameter) {
+  const angle = getAngle(index);
+  const r = getRadius(diameter);
   return {
-    x: ORIGIN_X * w + r * Math.cos(angle),
-    y: ORIGIN_Y * h - r * Math.sin(angle),
+    x: ORIGIN.x - r * Math.cos(angle),
+    y: ORIGIN.y - r * Math.sin(angle),
   };
 }
 
-/** Get polar coords for nose segments (offset above the oral tract). */
-function noseToXY(i, d, w, h) {
-  return polarToXY(i + NOSE_START, -NOSE_OFFSET - d * 0.9, w, h);
+function noseXY(noseIndex, noseDiam) {
+  return toXY(noseIndex + NOSE_START, -NOSE_OFFSET - noseDiam * 0.9);
 }
 
-// ── Smoothed path drawing (quadratic bezier between midpoints) ───
+function noseFloorXY(noseIndex) {
+  return toXY(noseIndex + NOSE_START, -NOSE_OFFSET);
+}
 
-/**
- * Draw a smooth curve through an array of {x, y} points using
- * quadratic bezier segments between midpoints.
- */
-function smoothPath(ctx, points) {
-  if (points.length < 2) return;
-  if (points.length === 2) {
-    ctx.moveTo(points[0].x, points[0].y);
-    ctx.lineTo(points[1].x, points[1].y);
+// ── Smooth path via quadratic bezier between midpoints ───────────
+
+function drawSmoothPath(ctx, pts, isMove) {
+  if (pts.length < 2) return;
+  if (isMove !== false) ctx.moveTo(pts[0].x, pts[0].y);
+  else ctx.lineTo(pts[0].x, pts[0].y);
+
+  if (pts.length === 2) {
+    ctx.lineTo(pts[1].x, pts[1].y);
     return;
   }
 
-  ctx.moveTo(points[0].x, points[0].y);
+  let mx = (pts[0].x + pts[1].x) / 2;
+  let my = (pts[0].y + pts[1].y) / 2;
+  ctx.lineTo(mx, my);
 
-  // First segment: line to midpoint of first two points
-  let midX = (points[0].x + points[1].x) / 2;
-  let midY = (points[0].y + points[1].y) / 2;
-  ctx.lineTo(midX, midY);
-
-  // Middle segments: quadratic bezier with control point at each data point
-  for (let i = 1; i < points.length - 1; i++) {
-    const nextMidX = (points[i].x + points[i + 1].x) / 2;
-    const nextMidY = (points[i].y + points[i + 1].y) / 2;
-    ctx.quadraticCurveTo(points[i].x, points[i].y, nextMidX, nextMidY);
+  for (let i = 1; i < pts.length - 1; i++) {
+    const nx = (pts[i].x + pts[i + 1].x) / 2;
+    const ny = (pts[i].y + pts[i + 1].y) / 2;
+    ctx.quadraticCurveTo(pts[i].x, pts[i].y, nx, ny);
   }
 
-  // Last segment: line to final point
-  const last = points[points.length - 1];
-  ctx.lineTo(last.x, last.y);
+  ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
 }
 
-// ── Public API ───────────────────────────────────────────────────
+// ── Main renderer ────────────────────────────────────────────────
 
 export function createTractRenderer(canvas) {
-  canvas.width = TRACT_W;
-  canvas.height = TRACT_H;
+  canvas.width = W;
+  canvas.height = H;
   const ctx = canvas.getContext("2d");
 
   let curIndex = 20;
   let curDiam = 2.0;
 
-  function drawTract(tIndex, tDiam) {
-    const w = TRACT_W;
-    const h = TRACT_H;
-    ctx.clearRect(0, 0, w, h);
+  // Tongue control zone boundaries (Pink Trombone style)
+  const tongueMinIdx = 12;
+  const tongueMaxIdx = 40;
+  const tongueMinDiam = 2.05;
+  const tongueMaxDiam = 3.5;
+  const tongueCenterIdx = (tongueMinIdx + tongueMaxIdx) / 2;
 
-    // Background
+  function draw(tIdx, tDiam) {
+    const diam = targetDiameters(tIdx, tDiam);
+
+    ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = BG;
-    ctx.beginPath();
-    ctx.roundRect(0, 0, w, h, 8);
-    ctx.fill();
-
-    const diam = targetDiameters(tIndex, tDiam);
+    ctx.fillRect(0, 0, W, H);
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
-    // ── Collect points for smooth curves ──
-    const outerPoints = [];  // palate / pharynx (diameter=0)
-    const innerPoints = [];  // tongue / inner wall
+    // ── 1. Tongue control zone (pale pink background region) ─────
+    drawTongueControl(ctx, tIdx, tDiam);
+
+    // ── 2. Collect wall points ───────────────────────────────────
+    const outer = [];  // palate/pharynx wall (diameter = 0)
+    const inner = [];  // tongue/inner wall
     for (let i = 1; i < N; i++) {
-      outerPoints.push(polarToXY(i, 0, w, h));
-      innerPoints.push(polarToXY(i, diam[i], w, h));
+      outer.push(toXY(i, 0));
+      inner.push(toXY(i, diam[i]));
     }
 
-    // ── Cavity fill (between outer and inner walls) ──
+    // ── 3. Cavity fill (between walls) ──────────────────────────
     ctx.beginPath();
-    smoothPath(ctx, outerPoints);
-    // Reverse inner points to close the shape
-    const innerRev = [...innerPoints].reverse();
+    drawSmoothPath(ctx, outer, true);
+    const innerRev = [...inner].reverse();
     ctx.lineTo(innerRev[0].x, innerRev[0].y);
-    smoothPath(ctx, innerRev);
+    drawSmoothPath(ctx, innerRev, false);
     ctx.closePath();
     ctx.fillStyle = CAVITY_FILL;
     ctx.fill();
 
-    // ── Nasal cavity fill ──
-    const noseOuterPoints = [];
-    const noseInnerPoints = [];
+    // ── 4. Nasal cavity ─────────────────────────────────────────
+    drawNasalCavity(ctx, diam);
+
+    // ── 5. Outer wall stroke (purple) — split at velum opening ──
+    const velumAngle = NOSE_REST[0] * 4;
+    const prePts = [];
+    const postPts = [];
+    for (let i = 2; i < N; i++) {
+      const p = toXY(i, 0);
+      if (i <= NOSE_START - 2) prePts.push(p);
+      else if (i >= NOSE_START + Math.ceil(velumAngle)) postPts.push(p);
+    }
+
+    ctx.strokeStyle = PALATE_STROKE;
+    ctx.lineWidth = 3;
+
+    ctx.beginPath();
+    drawSmoothPath(ctx, prePts, true);
+    ctx.stroke();
+
+    ctx.beginPath();
+    drawSmoothPath(ctx, postPts, true);
+    ctx.stroke();
+
+    // ── 6. Inner wall / tongue stroke (pink) ────────────────────
+    ctx.beginPath();
+    drawSmoothPath(ctx, inner, true);
+    ctx.strokeStyle = TONGUE_STROKE;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // ── 7. Tongue position dot ──────────────────────────────────
+    drawTongueDot(ctx, tIdx, tDiam);
+
+    // ── 8. Labels ───────────────────────────────────────────────
+    drawLabels(ctx, diam);
+  }
+
+  function drawTongueControl(ctx, tIdx, tDiam) {
+    // Pale pink background zone for tongue control (like Pink Trombone)
+    ctx.save();
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = TONGUE_CTRL_BG;
+    ctx.fillStyle = TONGUE_CTRL_BG;
+    ctx.globalAlpha = 1.0;
+    ctx.lineWidth = 45;
+
+    ctx.beginPath();
+    let p = toXY(tongueMinIdx, tongueMinDiam);
+    ctx.moveTo(p.x, p.y);
+    for (let i = tongueMinIdx + 1; i <= tongueMaxIdx; i++) {
+      p = toXY(i, tongueMinDiam);
+      ctx.lineTo(p.x, p.y);
+    }
+    p = toXY(tongueCenterIdx, tongueMaxDiam);
+    ctx.lineTo(p.x, p.y);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.fill();
+
+    // Grid dots
+    ctx.fillStyle = TONGUE_CTRL_DOT;
+    ctx.globalAlpha = 0.4;
+    const offsets = [0, -4.25, -8.5, 4.25, 8.5, -6.1, 6.1, 0, 0];
+    offsets.forEach((off, idx) => {
+      const d = idx < 5 ? tongueMinDiam : idx < 7 ? (tongueMinDiam + tongueMaxDiam) / 2 : tongueMaxDiam;
+      const pt = toXY(tongueCenterIdx + off, d);
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Tongue control circle (outline around current tongue position)
+    const tp = toXY(tIdx, tDiam);
+    ctx.strokeStyle = PALATE_STROKE;
+    ctx.lineWidth = 3;
+    ctx.globalAlpha = 0.5;
+    ctx.beginPath();
+    ctx.arc(tp.x, tp.y, 18, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 0.1;
+    ctx.fillStyle = PALATE_STROKE;
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawNasalCavity(ctx, diam) {
+    // Nasal cavity shape
+    const nFloor = [];
+    const nCeil = [];
     for (let i = 1; i < NOSE_LENGTH; i++) {
-      noseOuterPoints.push(noseToXY(i, NOSE_REST[i], w, h));
-      noseInnerPoints.push(polarToXY(i + NOSE_START, -NOSE_OFFSET, w, h));
+      nFloor.push(noseFloorXY(i));
+      nCeil.push(noseXY(i, NOSE_REST[i]));
     }
 
+    // Fill
     ctx.beginPath();
-    smoothPath(ctx, noseInnerPoints);
-    const noseOuterRev = [...noseOuterPoints].reverse();
-    ctx.lineTo(noseOuterRev[0].x, noseOuterRev[0].y);
-    smoothPath(ctx, noseOuterRev);
+    drawSmoothPath(ctx, nFloor, true);
+    const nCeilRev = [...nCeil].reverse();
+    ctx.lineTo(nCeilRev[0].x, nCeilRev[0].y);
+    drawSmoothPath(ctx, nCeilRev, false);
     ctx.closePath();
     ctx.fillStyle = NOSE_FILL;
     ctx.fill();
 
-    // ── Velum connection (oral cavity to nasal) ──
-    const velumOral = polarToXY(NOSE_START - 1, 0, w, h);
-    const velumNose = polarToXY(NOSE_START, -NOSE_OFFSET, w, h);
-    const velumEnd = polarToXY(NOSE_START + 3, -NOSE_OFFSET, w, h);
-    const velumOralEnd = polarToXY(NOSE_START + 2, 0, w, h);
+    // Velum connection
+    const velumAngle = NOSE_REST[0] * 4;
+    const v0 = toXY(NOSE_START - 2, 0);
+    const v1 = noseFloorXY(0);
+    const v2 = noseFloorXY(Math.floor(velumAngle));
+    const v3 = toXY(NOSE_START + Math.floor(velumAngle) - 2, 0);
 
     ctx.beginPath();
-    ctx.moveTo(velumOral.x, velumOral.y);
-    ctx.lineTo(velumNose.x, velumNose.y);
-    ctx.lineTo(velumEnd.x, velumEnd.y);
-    ctx.lineTo(velumOralEnd.x, velumOralEnd.y);
+    ctx.moveTo(v0.x, v0.y);
+    ctx.lineTo(v1.x, v1.y);
+    ctx.lineTo(v2.x, v2.y);
+    ctx.lineTo(v3.x, v3.y);
     ctx.closePath();
     ctx.fillStyle = NOSE_FILL;
     ctx.fill();
 
-    // ── Outer wall stroke (palate / pharynx) ──
-    // Split at velum opening
-    const outerPre = [];
-    const outerPost = [];
-    for (let i = 1; i < N; i++) {
-      const p = polarToXY(i, 0, w, h);
-      if (i <= NOSE_START - 2) outerPre.push(p);
-      else if (i >= NOSE_START + 3) outerPost.push(p);
-    }
+    // Nose outlines (lighter purple)
+    ctx.strokeStyle = NOSE_STROKE;
+    ctx.lineWidth = 2.5;
 
     ctx.beginPath();
-    smoothPath(ctx, outerPre);
-    ctx.strokeStyle = OUTLINE_COLOUR;
-    ctx.lineWidth = 2.5;
+    drawSmoothPath(ctx, nCeil, true);
     ctx.stroke();
 
     ctx.beginPath();
-    smoothPath(ctx, outerPost);
-    ctx.strokeStyle = OUTLINE_COLOUR;
-    ctx.lineWidth = 2.5;
+    drawSmoothPath(ctx, nFloor, true);
     ctx.stroke();
 
-    // ── Nasal cavity outlines ──
-    ctx.beginPath();
-    smoothPath(ctx, noseOuterPoints);
-    ctx.strokeStyle = NOSE_OUTLINE;
+    // Velum lines
     ctx.lineWidth = 2;
-    ctx.stroke();
-
     ctx.beginPath();
-    smoothPath(ctx, noseInnerPoints);
-    ctx.strokeStyle = NOSE_OUTLINE;
-    ctx.lineWidth = 2;
+    ctx.moveTo(v0.x, v0.y);
+    ctx.lineTo(v1.x, v1.y);
     ctx.stroke();
-
-    // ── Velum lines ──
     ctx.beginPath();
-    ctx.moveTo(velumOral.x, velumOral.y);
-    ctx.lineTo(velumNose.x, velumNose.y);
-    ctx.moveTo(velumOralEnd.x, velumOralEnd.y);
-    ctx.lineTo(velumEnd.x, velumEnd.y);
-    ctx.strokeStyle = NOSE_OUTLINE;
-    ctx.lineWidth = 1.5;
+    ctx.moveTo(v3.x, v3.y);
+    ctx.lineTo(v2.x, v2.y);
     ctx.stroke();
+  }
 
-    // ── Tongue / inner wall stroke (smooth bezier) ──
-    ctx.beginPath();
-    smoothPath(ctx, innerPoints);
-    ctx.strokeStyle = TONGUE_COLOUR;
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
+  function drawTongueDot(ctx, tIdx, tDiam) {
+    const tp = toXY(tIdx, tDiam);
 
-    // ── Tongue fill (below the tongue curve) ──
-    ctx.beginPath();
-    smoothPath(ctx, innerPoints);
-    const lastInner = innerPoints[innerPoints.length - 1];
-    const pEnd = polarToXY(N - 1, diam[N - 1] + 2, w, h);
-    const pStart = polarToXY(1, diam[0] + 2, w, h);
-    ctx.lineTo(pEnd.x, pEnd.y);
-    ctx.lineTo(pStart.x, pStart.y);
-    ctx.closePath();
-    ctx.fillStyle = TONGUE_FILL;
-    ctx.fill();
-
-    // ── Tongue position dot ──
-    const tp = polarToXY(tIndex, tDiam, w, h);
-    const grad = ctx.createRadialGradient(tp.x, tp.y, 0, tp.x, tp.y, 14);
-    grad.addColorStop(0, "rgba(232, 87, 138, 0.35)");
+    // Soft glow
+    const grad = ctx.createRadialGradient(tp.x, tp.y, 0, tp.x, tp.y, 20);
+    grad.addColorStop(0, "rgba(232, 87, 138, 0.3)");
     grad.addColorStop(1, "rgba(232, 87, 138, 0)");
     ctx.beginPath();
-    ctx.arc(tp.x, tp.y, 14, 0, Math.PI * 2);
+    ctx.arc(tp.x, tp.y, 20, 0, Math.PI * 2);
     ctx.fillStyle = grad;
     ctx.fill();
 
+    // Solid dot
     ctx.beginPath();
-    ctx.arc(tp.x, tp.y, 5, 0, Math.PI * 2);
-    ctx.fillStyle = TONGUE_COLOUR;
+    ctx.arc(tp.x, tp.y, 6, 0, Math.PI * 2);
+    ctx.fillStyle = TONGUE_DOT;
     ctx.fill();
+  }
 
-    // ── Labels ──
+  function drawLabels(ctx, diam) {
+    ctx.save();
     ctx.fillStyle = LABEL_COLOUR;
-    ctx.font = "10px system-ui";
+    ctx.font = "13px system-ui, sans-serif";
     ctx.textAlign = "center";
 
-    const lipP = polarToXY(N - 1, -0.5, w, h);
-    ctx.fillText("lips", lipP.x, lipP.y);
+    // Rotated labels along the tract
+    function arcLabel(index, diameter, text) {
+      const angle = getAngle(index);
+      const r = getRadius(diameter);
+      const x = ORIGIN.x - r * Math.cos(angle);
+      const y = ORIGIN.y - r * Math.sin(angle);
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle - Math.PI / 2);
+      ctx.fillText(text, 0, 0);
+      ctx.restore();
+    }
 
-    const throatP = polarToXY(3, -0.8, w, h);
-    ctx.fillText("pharynx", throatP.x, throatP.y);
+    arcLabel(N * 0.1, 0.5, "throat");
+    arcLabel(N * 0.95, 0.8 + 0.8 * diam[N - 1], "lips");
 
-    // Palate label along the outer wall
-    const palateP = polarToXY(Math.floor(N * 0.75), -0.4, w, h);
-    ctx.fillText("palate", palateP.x, palateP.y);
+    ctx.font = "14px system-ui, sans-serif";
+    arcLabel(N * 0.6, 1.0, "oral");
+    arcLabel(N * 0.7, 1.0, "cavity");
 
-    // Nasal label
-    const nasalP = noseToXY(Math.floor(NOSE_LENGTH * 0.5), NOSE_REST[Math.floor(NOSE_LENGTH * 0.5)] + 0.3, w, h);
-    ctx.fillText("nasal", nasalP.x, nasalP.y);
+    ctx.font = "13px system-ui, sans-serif";
+    arcLabel(N * 0.71, -1.7, "nasal");
+    arcLabel(N * 0.71, -1.25, "cavity");
 
-    // Tongue label
-    ctx.fillStyle = TONGUE_LABEL_COLOUR;
-    ctx.font = "10px system-ui";
-    const tongueLabel = polarToXY(
-      (BLADE_START + TIP_START) / 2,
-      tDiam + 0.8,
-      w,
-      h,
-    );
-    ctx.fillText("tongue", tongueLabel.x, tongueLabel.y);
+    ctx.restore();
   }
+
+  // ── Public interface ──────────────────────────────────────────
 
   function update(tongueIndex, tongueDiameter) {
     tongueIndex = Math.max(12, Math.min(40, tongueIndex));
@@ -326,16 +394,17 @@ export function createTractRenderer(canvas) {
     curIndex += (tongueIndex - curIndex) * 0.3;
     curDiam += (tongueDiameter - curDiam) * 0.3;
 
-    drawTract(curIndex, curDiam);
+    draw(curIndex, curDiam);
   }
 
   function reset() {
     curIndex = 20;
     curDiam = 2.0;
-    drawTract(curIndex, curDiam);
+    draw(curIndex, curDiam);
   }
 
-  drawTract(curIndex, curDiam);
+  // Initial draw
+  draw(curIndex, curDiam);
 
   return { update, reset };
 }
