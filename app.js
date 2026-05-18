@@ -263,6 +263,12 @@ function processAudio() {
 
   const result = isSilent ? null : extractFormants(timeDomainBuffer, audioCtx.sampleRate);
 
+  // Clear median history during silence to prevent stale values
+  if (isSilent) {
+    window._f1History = [];
+    window._f2History = [];
+  }
+
   if (!window._f1History) window._f1History = [];
   if (!window._f2History) window._f2History = [];
   const MEDIAN_LEN = 5;
