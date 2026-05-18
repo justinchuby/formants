@@ -49,7 +49,7 @@ function getRadius(diameter) {
 }
 
 function getX(angle, r) {
-  return ORIGIN.x + r * Math.cos(angle);
+  return ORIGIN.x - r * Math.cos(angle);
 }
 
 function getY(angle, r) {
