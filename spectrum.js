@@ -178,28 +178,19 @@ export function createSpectrumRenderer(canvas) {
       const numPoints = 256;
       const envelope = lpcFrequencyResponse(lpcCoeffs, sampleRate, numPoints, FREQ_MAX);
 
-      // Compute offset: align LPC envelope with FFT mean level
-      // Average FFT dB in 200-4000 Hz range
-      let fftSum = 0;
-      let fftCount = 0;
-      const binLo = Math.round((200 / nyquist) * binCount);
+      // Compute offset: align LPC envelope peak with FFT peak
+      const binLo = Math.round((100 / nyquist) * binCount);
       const binHi = Math.min(maxBin, Math.round((4000 / nyquist) * binCount));
+      let fftMax = -Infinity;
       for (let i = binLo; i <= binHi; i++) {
-        fftSum += fftData[i];
-        fftCount++;
+        if (fftData[i] > fftMax) fftMax = fftData[i];
       }
-      const fftMean = fftCount > 0 ? fftSum / fftCount : 0;
 
-      let lpcSum = 0;
-      let lpcCount = 0;
-      const ptLo = Math.round((200 / FREQ_MAX) * (numPoints - 1));
-      const ptHi = Math.round((4000 / FREQ_MAX) * (numPoints - 1));
-      for (let i = ptLo; i <= ptHi; i++) {
-        lpcSum += envelope[i];
-        lpcCount++;
+      let lpcMax = -Infinity;
+      for (let i = 0; i < numPoints; i++) {
+        if (envelope[i] > lpcMax) lpcMax = envelope[i];
       }
-      const lpcMean = lpcCount > 0 ? lpcSum / lpcCount : 0;
-      const offset = fftMean - lpcMean;
+      const offset = fftMax - lpcMax;
 
       ctx.beginPath();
       ctx.setLineDash([6, 4]);
