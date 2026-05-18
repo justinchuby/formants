@@ -10,6 +10,7 @@
   <header>
     <h1>Formant Vowel Chart</h1>
     <p>Real-time vowel tracking via formant analysis</p>
+    <button class="info-btn" id="btn-info" title="About this project">ℹ️</button>
   </header>
 
   <div class="main">
@@ -36,7 +37,7 @@
       </div>
 
       <div class="controls">
-        <button id="btn-record">Start</button>
+        <button id="btn-record">Pause</button>
         <button id="btn-clear">Clear Trace</button>
       </div>
 
@@ -49,6 +50,54 @@
 
   <div class="spectrum-container">
     <canvas id="spectrum"></canvas>
+  </div>
+
+  <!-- About Modal -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <button class="modal-close" id="modal-close">×</button>
+      <h2>Real-time Vowel Formant Analyzer</h2>
+      <p>
+        Analyzes speech formants (F1/F2 resonance frequencies) in real time,
+        displayed on an IPA vowel chart, vocal tract cross-section, and spectrum plot.
+      </p>
+
+      <h3>Algorithm Pipeline</h3>
+      <ul>
+        <li><strong>Recording:</strong> Web Audio API (MediaStream)</li>
+        <li><strong>Downsample:</strong> 44100 Hz → 11025 Hz (box filter)</li>
+        <li><strong>Pre-emphasis:</strong> α = 0.97</li>
+        <li><strong>LPC estimation:</strong> Burg's method (order 12)</li>
+        <li><strong>Root finding:</strong> Durand-Kerner iteration</li>
+        <li><strong>Formant selection:</strong> 50–5000 Hz, bandwidth &lt; 600 Hz</li>
+        <li><strong>Stabilization:</strong> 5-frame median filter</li>
+      </ul>
+
+      <h3>Tech Stack</h3>
+      <p>Pure JavaScript, zero dependencies, Web Audio API.</p>
+
+      <h3>Credits</h3>
+      <p>
+        Vocal tract rendering inspired by
+        <a href="https://dood.al/pinktrombone/" target="_blank" rel="noopener">Pink Trombone</a>
+        (Neil Thapen). Burg's algorithm inspired by
+        <a href="https://www.fon.hum.uva.nl/praat/" target="_blank" rel="noopener">Praat</a>.
+      </p>
+      <p>
+        <a href="https://github.com/justinchuby/formants" target="_blank" rel="noopener">
+          GitHub: justinchuby/formants
+        </a>
+      </p>
+    </div>
+  </div>
+
+  <!-- Click-to-start overlay -->
+  <div class="start-overlay" id="start-overlay">
+    <div class="start-prompt">
+      <div class="start-icon">🎙️</div>
+      <div class="start-text">Click anywhere to start</div>
+      <div class="start-sub">Microphone access required</div>
+    </div>
   </div>
 
   <script type="module" src="app.js"></script>

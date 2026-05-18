@@ -1,12 +1,15 @@
 :root {
-  --bg: #0f0f13;
-  --surface: #1a1a24;
-  --border: #2a2a3a;
-  --text: #e0e0e8;
-  --text-dim: #888898;
-  --accent: #6ee7b7;
-  --accent-glow: rgba(110, 231, 183, 0.3);
-  --red: #f87171;
+  --bg: #fdf8f4;
+  --surface: #ffffff;
+  --border: #f0e0d8;
+  --text: #2d2d2d;
+  --text-dim: #888888;
+  --accent: #e8578a;
+  --accent-light: #fce4ec;
+  --accent-glow: rgba(232, 87, 138, 0.3);
+  --blue: #4a90d9;
+  --red: #e8578a;
+  --canvas-bg: #fafafa;
 }
 
 * {
@@ -29,12 +32,14 @@ body {
 header {
   text-align: center;
   margin-bottom: 1.5rem;
+  position: relative;
 }
 
 header h1 {
   font-size: 1.4rem;
   font-weight: 600;
   letter-spacing: 0.02em;
+  color: var(--text);
 }
 
 header p {
@@ -43,11 +48,37 @@ header p {
   margin-top: 0.25rem;
 }
 
-.main {
+.info-btn {
+  position: absolute;
+  top: 0;
+  right: -3rem;
+  background: var(--accent-light);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+  font-size: 1rem;
+  cursor: pointer;
   display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.15s;
+  color: var(--accent);
+}
+
+.info-btn:hover {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* ── Main layout ── */
+.main {
+  display: grid;
+  grid-template-columns: auto auto auto;
   gap: 1.5rem;
-  align-items: flex-start;
-  flex-wrap: wrap;
+  align-items: start;
   justify-content: center;
   width: 100%;
   max-width: 1200px;
@@ -67,18 +98,14 @@ header p {
   width: 300px;
   height: 300px;
 }
-.tract-container-real {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.4rem;
-}
 
 .tract-label {
   color: var(--text-dim);
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  text-align: center;
+  margin-top: 0.4rem;
 }
 
 canvas {
@@ -140,6 +167,7 @@ canvas {
   font-size: 1.1rem;
   margin-top: 0.1rem;
   margin-bottom: 0.5rem;
+  color: var(--text);
 }
 
 .controls {
@@ -167,7 +195,7 @@ button:hover {
 
 button.active {
   background: var(--accent);
-  color: var(--bg);
+  color: #fff;
   border-color: var(--accent);
   font-weight: 600;
 }
@@ -224,13 +252,245 @@ button:disabled {
   border-radius: 8px;
 }
 
-@media (max-width: 640px) {
+/* ── Modal ── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay.visible {
+  display: flex;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 520px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.modal h2 {
+  font-size: 1.3rem;
+  margin-bottom: 0.75rem;
+  color: var(--accent);
+}
+
+.modal h3 {
+  font-size: 1rem;
+  margin-top: 1.2rem;
+  margin-bottom: 0.4rem;
+  color: var(--text);
+}
+
+.modal ul {
+  padding-left: 1.2rem;
+  font-size: 0.88rem;
+}
+
+.modal li {
+  margin-bottom: 0.2rem;
+}
+
+.modal p {
+  font-size: 0.9rem;
+}
+
+.modal a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.modal a:hover {
+  text-decoration: underline;
+}
+
+.modal-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--text-dim);
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  padding: 0;
+}
+
+.modal-close:hover {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+/* ── Start overlay ── */
+.start-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(253, 248, 244, 0.92);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: opacity 0.3s ease;
+}
+
+.start-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.start-prompt {
+  text-align: center;
+  animation: breathe 2s ease-in-out infinite;
+}
+
+.start-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.start-text {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.start-sub {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-top: 0.5rem;
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+
+/* ── Responsive: Tablet ── */
+@media (max-width: 1024px) {
   .main {
+    grid-template-columns: auto auto;
+  }
+  .sidebar {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .sidebar > * {
+    flex: 1;
+    min-width: 160px;
+    max-width: 240px;
+  }
+}
+
+/* ── Responsive: Mobile ── */
+@media (max-width: 768px) {
+  body {
+    padding: 1rem 0.75rem;
+  }
+
+  header h1 {
+    font-size: 1.1rem;
+  }
+
+  header p {
+    font-size: 0.75rem;
+  }
+
+  .info-btn {
+    right: -2.5rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.85rem;
+  }
+
+  .main {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .chart-container {
+    width: 100%;
+    padding: 0.75rem;
+  }
+
+  #chart {
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  #tract {
+    width: 100%;
+    height: auto;
+    max-width: 300px;
+    margin: 0 auto;
+    display: block;
+  }
+
+  .tract-container {
+    display: flex;
     flex-direction: column;
     align-items: center;
   }
+
   .sidebar {
+    flex-direction: column;
+    align-items: center;
+    min-width: unset;
     width: 100%;
+  }
+
+  .sidebar > * {
     max-width: 360px;
+    min-width: unset;
+    width: 100%;
+  }
+
+  .current-vowel {
+    padding: 1rem;
+  }
+
+  .current-vowel .symbol {
+    font-size: 3rem;
+  }
+
+  .spectrum-container {
+    margin-top: 1rem;
+    padding: 0.75rem;
+  }
+
+  #spectrum {
+    height: 150px;
+  }
+
+  .formant-display .value {
+    font-size: 1rem;
+  }
+
+  .modal {
+    padding: 1.5rem;
+    max-width: 95%;
   }
 }
