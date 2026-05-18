@@ -190,6 +190,7 @@ export function createSpectrumRenderer(canvas) {
       const fList = [
         { freq: formants.f1, label: "F1" },
         { freq: formants.f2, label: "F2" },
+        ...(formants.f3 ? [{ freq: formants.f3, label: "F3" }] : []),
       ];
 
       for (const { freq, label } of fList) {
