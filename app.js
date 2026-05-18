@@ -256,7 +256,7 @@ function processAudio() {
     rms += timeDomainBuffer[i] * timeDomainBuffer[i];
   }
   rms = Math.sqrt(rms / timeDomainBuffer.length);
-  const isSilent = rms < 0.005; // low threshold for quiet speakers
+  const isSilent = rms < 0.02; // balance: passes female voice, rejects noise
 
   if (!fftBuffer) fftBuffer = new Float32Array(analyserNode.frequencyBinCount);
   analyserNode.getFloatFrequencyData(fftBuffer);
