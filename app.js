@@ -256,7 +256,7 @@ function processAudio() {
     rms += timeDomainBuffer[i] * timeDomainBuffer[i];
   }
   rms = Math.sqrt(rms / timeDomainBuffer.length);
-  const isSilent = rms < 0.01;
+  const isSilent = rms < 0.02; // ~-34 dB threshold
 
   if (!fftBuffer) fftBuffer = new Float32Array(analyserNode.frequencyBinCount);
   analyserNode.getFloatFrequencyData(fftBuffer);
