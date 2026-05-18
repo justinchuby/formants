@@ -160,6 +160,29 @@ function findRoots(a, order) {
  * @param {number} [lpcOrder=12] - LPC order (rule of thumb: 2 + sampleRate/1000)
  * @returns {{ f1: number, f2: number } | null} - Formant frequencies or null if detection fails
  */
+/**
+ * Compute LPC coefficients for a frame of audio.
+ *
+ * @param {Float32Array} frame - Audio samples
+ * @param {number} sampleRate - Sample rate in Hz
+ * @param {number} [order=30] - LPC order
+ * @returns {Float64Array | null} LPC coefficients a[0..order] (a[0]=1 unused), or null on silence
+ */
+export function getLPCCoefficients(frame, sampleRate, order = 30) {
+  if (frame.length < order + 1) return null;
+
+  let energy = 0;
+  for (let i = 0; i < frame.length; i++) energy += frame[i] * frame[i];
+  if (energy / frame.length < 1e-8) return null;
+
+  const emphasized = preEmphasis(frame);
+  const windowed = hammingWindow(emphasized);
+  const R = autocorrelation(windowed, order);
+  if (R[0] === 0) return null;
+
+  return levinsonDurbin(R, order);
+}
+
 export function extractFormants(frame, sampleRate, lpcOrder = 30) {
   if (frame.length < lpcOrder + 1) return null;
 

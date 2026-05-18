@@ -1,6 +1,7 @@
 import { VOWELS, findNearestVowel } from "./vowels.js";
-import { extractFormants } from "./lpc.js";
+import { extractFormants, getLPCCoefficients } from "./lpc.js";
 import { createTractRenderer, formantsToTongue } from "./tract.js";
+import { createSpectrumRenderer } from "./spectrum.js";
 
 // ── Chart configuration ──────────────────────────────────────────
 const CANVAS_W = 520;
@@ -221,6 +222,10 @@ function processAudio() {
 
   analyserNode.getFloatTimeDomainData(timeDomainBuffer);
 
+  // Get FFT frequency data for spectrum display
+  if (!fftBuffer) fftBuffer = new Float32Array(analyserNode.frequencyBinCount);
+  analyserNode.getFloatFrequencyData(fftBuffer);
+
   // Debug: check if this analyserNode is the same as the window one
   if (!window._checkedAnalyser) {
     window._checkedAnalyser = true;
@@ -258,6 +263,10 @@ function processAudio() {
   }
 
   const result = extractFormants(timeDomainBuffer, audioCtx.sampleRate);
+
+  // Get LPC coefficients for spectrum envelope
+  const lpcCoeffs = getLPCCoefficients(timeDomainBuffer, audioCtx.sampleRate);
+
   if (!window._lpcLogCount) window._lpcLogCount = 0;
   if (window._lpcLogCount < 5) {
     window._lpcLogCount++;
@@ -303,6 +312,10 @@ function processAudio() {
   }
 
   drawChart();
+
+  // Update spectrum display
+  spectrumRenderer.draw(fftBuffer, audioCtx.sampleRate, lpcCoeffs, currentFormants);
+
   } catch (err) {
     if (!window._errorLogged) {
       console.error('[Formants] processAudio error:', err);
@@ -403,6 +416,11 @@ const tractCanvas = document.getElementById("tract");
 const tractRenderer = createTractRenderer(tractCanvas);
 console.log("[Formants] Tract canvas:", tractCanvas, "size:", tractCanvas?.width, "x", tractCanvas?.height);
 console.log("[Formants] Tract renderer:", tractRenderer);
+
+// ── Spectrum renderer ───────────────────────────────────────────
+const spectrumCanvas = document.getElementById("spectrum");
+const spectrumRenderer = createSpectrumRenderer(spectrumCanvas);
+let fftBuffer = null; // Allocated on start
 
 // ── Initial draw ────────────────────────────────────────────────
 drawChart();
