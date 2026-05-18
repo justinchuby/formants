@@ -336,11 +336,16 @@ export function createTractRenderer(canvas) {
   render();
 
   return {
-    update(tongueIndex, tongueDiameter) {
+    update(tongueIndex, tongueDiameter, lipDiameter = 1.5) {
       // Clamp to valid tongue range
       const idx = Math.max(TONGUE_INDEX_MIN, Math.min(TONGUE_INDEX_MAX, tongueIndex));
       const diam = Math.max(TONGUE_DIAMETER_MIN, Math.min(TONGUE_DIAMETER_MAX, tongueDiameter));
       currentDiameters = computeDiameters(idx, diam);
+      // Apply lip rounding to last few segments
+      const lipWidth = Math.max(0.2, Math.min(2.5, lipDiameter));
+      for (let i = TRACT_LENGTH - 3; i < TRACT_LENGTH; i++) {
+        currentDiameters[i] = lipWidth;
+      }
       render();
     },
     reset() {
@@ -360,9 +365,8 @@ export function createTractRenderer(canvas) {
  *   F1: 270 Hz (close /i/) – 730 Hz (open /a/)
  *   F2: 870 Hz (back /u/) – 2290 Hz (front /i/)
  */
-export function formantsToTongue(f1, f2) {
-  // F1 maps inversely to tongue diameter (high F1 = open = low diameter)
-  // diameter range: 2.05 (open, low tongue) to 3.5 (close, high tongue)
+export function formantsToTongue(f1, f2, f3 = null) {
+  // F1 maps inversely to tongue diameter (high F1 = open = large diameter)
   const f1Norm = Math.max(0, Math.min(1, (f1 - 270) / (730 - 270)));
   const tongueDiameter = TONGUE_DIAMETER_MIN + f1Norm * (TONGUE_DIAMETER_MAX - TONGUE_DIAMETER_MIN);
 
@@ -370,8 +374,17 @@ export function formantsToTongue(f1, f2) {
   const f2Norm = Math.max(0, Math.min(1, (f2 - 870) / (2290 - 870)));
   const tongueIndex = TONGUE_INDEX_MIN + f2Norm * (TONGUE_INDEX_MAX - TONGUE_INDEX_MIN);
 
+  // F3 maps to lip rounding (low F3 = rounded/narrow, high F3 = spread/wide)
+  // F3 range: ~2200 (rounded) to ~3100 (spread)
+  let lipDiameter = 1.5; // default open
+  if (f3 !== null) {
+    const f3Norm = Math.max(0, Math.min(1, (f3 - 2200) / (3100 - 2200)));
+    lipDiameter = 0.4 + f3Norm * 1.3; // 0.4 (rounded/narrow) to 1.7 (spread/wide)
+  }
+
   return {
     tongueIndex: Math.round(tongueIndex * 10) / 10,
     tongueDiameter: Math.round(tongueDiameter * 100) / 100,
+    lipDiameter: Math.round(lipDiameter * 100) / 100,
   };
 }

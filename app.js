@@ -323,8 +323,8 @@ function processAudio() {
     f2ValueEl.textContent = `${Math.round(smoothF2)} Hz`;
     if (f3ValueEl) f3ValueEl.textContent = result.f3 ? `${Math.round(result.f3)} Hz` : "—";
 
-    const tongue = formantsToTongue(smoothF1, smoothF2);
-    tractRenderer.update(tongue.tongueIndex, tongue.tongueDiameter);
+    const tongue = formantsToTongue(smoothF1, smoothF2, result.f3 || null);
+    tractRenderer.update(tongue.tongueIndex, tongue.tongueDiameter, tongue.lipDiameter);
   } else {
     currentFormants = null;
     symbolEl.classList.add("silent");
