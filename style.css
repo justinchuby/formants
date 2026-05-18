@@ -453,7 +453,8 @@ button:disabled {
   #tract {
     width: 100%;
     height: auto;
-    max-width: 300px;
+    max-width: 520px;
+    width: 100%;
     margin: 0 auto;
     display: block;
   }
@@ -508,4 +509,13 @@ button:disabled {
     padding: 1.5rem;
     max-width: 95%;
   }
+}
+
+.data-row {
+  min-height: 1.8rem;
+}
+.data-value {
+  min-width: 5rem;
+  display: inline-block;
+  text-align: right;
 }
