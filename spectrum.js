@@ -154,7 +154,7 @@ export function createSpectrumRenderer(canvas) {
     // ── LPC envelope (blue dashed) ──────────────────────────────
     if (lpcCoeffs) {
       const numPoints = 256;
-      const envelope = lpcFrequencyResponse(lpcCoeffs, sampleRate, numPoints, FREQ_MAX);
+      const envelope = lpcFrequencyResponse(lpcCoeffs, 11025, numPoints, FREQ_MAX); // LPC was computed at 11025Hz
 
       const binLo = Math.round((100 / nyquist) * binCount);
       const binHi = Math.min(maxBin, Math.round((4000 / nyquist) * binCount));
