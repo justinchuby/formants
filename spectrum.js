@@ -5,8 +5,8 @@
 
 const SPEC_PADDING = { top: 20, right: 20, bottom: 45, left: 55 };
 const FREQ_MAX = 5000; // Hz
-const DB_MIN = -40;
-const DB_MAX = 50;
+const DB_MIN = -100;
+const DB_MAX = 0;
 
 /**
  * Compute LPC frequency response magnitude in dB.
