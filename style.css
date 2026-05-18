@@ -76,7 +76,7 @@ header p {
 /* ── Main layout ── */
 .main {
   display: grid;
-  grid-template-columns: auto auto auto;
+  grid-template-columns: 520px 400px 180px;
   gap: 1.5rem;
   align-items: start;
   justify-content: center;
@@ -95,8 +95,9 @@ header p {
 .tract-container {
 }
 #tract {
-  width: 300px;
-  height: 300px;
+  width: 400px;
+  height: 340px;
+  max-width: 100%;
 }
 
 .tract-label {
@@ -114,6 +115,8 @@ canvas {
 }
 
 .sidebar {
+  min-width: 180px;
+  max-width: 180px;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -392,6 +395,8 @@ button:disabled {
     grid-template-columns: auto auto;
   }
   .sidebar {
+  min-width: 180px;
+  max-width: 180px;
     grid-column: 1 / -1;
     flex-direction: row;
     flex-wrap: wrap;
@@ -456,6 +461,8 @@ button:disabled {
   }
 
   .sidebar {
+  min-width: 180px;
+  max-width: 180px;
     flex-direction: column;
     align-items: center;
     min-width: unset;
