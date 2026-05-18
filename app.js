@@ -299,7 +299,7 @@ function processAudio() {
   } else {
     currentFormants = null;
     symbolEl.classList.add("silent");
-    tractRenderer.reset();
+    // Keep last tongue position during silence
   }
 
   drawChart();
