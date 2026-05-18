@@ -1,24 +1,24 @@
 /**
  * Real-time spectrum display: FFT magnitude (pink fill) + LPC envelope (blue dashed)
- * with formant markers.
+ * with formant markers. Warm cream/pink colour scheme.
  */
 
 const SPEC_PADDING = { top: 20, right: 20, bottom: 45, left: 55 };
-const FREQ_MAX = 5000; // Hz
+const FREQ_MAX = 5000;
 const DB_MIN = -100;
 const DB_MAX = 0;
 
-/**
- * Compute LPC frequency response magnitude in dB.
- *
- * H(f) = 1 / |A(e^{j2πf/fs})| where A(z) = 1 - a[1]z^-1 - ... - a[p]z^-p
- *
- * @param {Float64Array} a - LPC coefficients (a[0] unused, a[1..order])
- * @param {number} sampleRate
- * @param {number} numPoints - Number of frequency bins to evaluate
- * @param {number} freqMax - Maximum frequency
- * @returns {Float64Array} dB values at evenly-spaced frequencies 0..freqMax
- */
+// ── Colours ──────────────────────────────────────────────────────
+const SPEC_BG = "#fafafa";
+const GRID_STROKE = "rgba(0, 0, 0, 0.06)";
+const GRID_TEXT = "rgba(0, 0, 0, 0.3)";
+const AXIS_LABEL = "rgba(0, 0, 0, 0.4)";
+const FFT_FILL = "rgba(232, 87, 138, 0.2)";
+const FFT_STROKE = "rgba(232, 87, 138, 0.65)";
+const LPC_STROKE = "rgba(74, 144, 217, 0.9)";
+const FORMANT_LINE = "rgba(232, 87, 138, 0.7)";
+const FORMANT_TEXT = "rgba(232, 87, 138, 0.9)";
+
 function lpcFrequencyResponse(a, sampleRate, numPoints, freqMax) {
   const order = a.length - 1;
   const result = new Float64Array(numPoints);
@@ -27,7 +27,6 @@ function lpcFrequencyResponse(a, sampleRate, numPoints, freqMax) {
     const freq = (i / (numPoints - 1)) * freqMax;
     const omega = (2 * Math.PI * freq) / sampleRate;
 
-    // A(e^{jω}) = 1 - Σ a[k] e^{-jkω}
     let realA = 1;
     let imagA = 0;
     for (let k = 1; k <= order; k++) {
@@ -36,19 +35,12 @@ function lpcFrequencyResponse(a, sampleRate, numPoints, freqMax) {
     }
 
     const mag = Math.sqrt(realA * realA + imagA * imagA);
-    // H(f) = 1/|A|, convert to dB; add offset to align with FFT level
     result[i] = mag > 1e-10 ? -20 * Math.log10(mag) : DB_MIN;
   }
 
   return result;
 }
 
-/**
- * Create a spectrum renderer bound to a canvas element.
- *
- * @param {HTMLCanvasElement} canvas
- * @returns {{ draw(fftData: Float32Array, sampleRate: number, lpcCoeffs: Float64Array|null, formants: {f1:number,f2:number}|null): void }}
- */
 export function createSpectrumRenderer(canvas) {
   const ctx = canvas.getContext("2d");
 
@@ -63,25 +55,22 @@ export function createSpectrumRenderer(canvas) {
   resize();
   window.addEventListener("resize", resize);
 
-  /** Map frequency to x pixel (CSS coords). */
   function freqToX(f, w) {
     const plotW = w - SPEC_PADDING.left - SPEC_PADDING.right;
     return SPEC_PADDING.left + (f / FREQ_MAX) * plotW;
   }
 
-  /** Map dB to y pixel. */
   function dbToY(db, h) {
     const plotH = h - SPEC_PADDING.top - SPEC_PADDING.bottom;
     return SPEC_PADDING.top + (1 - (db - DB_MIN) / (DB_MAX - DB_MIN)) * plotH;
   }
 
   function drawAxes(w, h) {
-    ctx.strokeStyle = "#ffffff10";
+    ctx.strokeStyle = GRID_STROKE;
     ctx.lineWidth = 1;
-    ctx.fillStyle = "#ffffff40";
+    ctx.fillStyle = GRID_TEXT;
     ctx.font = "11px system-ui";
 
-    // Frequency ticks
     ctx.textAlign = "center";
     for (let f = 0; f <= FREQ_MAX; f += 1000) {
       const x = freqToX(f, w);
@@ -92,7 +81,6 @@ export function createSpectrumRenderer(canvas) {
       ctx.fillText(`${f}`, x, h - SPEC_PADDING.bottom + 16);
     }
 
-    // dB ticks
     ctx.textAlign = "right";
     for (let db = DB_MIN; db <= DB_MAX; db += 10) {
       const y = dbToY(db, h);
@@ -103,8 +91,7 @@ export function createSpectrumRenderer(canvas) {
       ctx.fillText(`${db}`, SPEC_PADDING.left - 6, y + 4);
     }
 
-    // Axis labels
-    ctx.fillStyle = "#ffffff50";
+    ctx.fillStyle = AXIS_LABEL;
     ctx.font = "12px system-ui";
     ctx.textAlign = "center";
     ctx.fillText("Frequency (Hz)", w / 2, h - 4);
@@ -116,12 +103,6 @@ export function createSpectrumRenderer(canvas) {
     ctx.restore();
   }
 
-  /**
-   * @param {Float32Array} fftData - from analyserNode.getFloatFrequencyData
-   * @param {number} sampleRate
-   * @param {Float64Array|null} lpcCoeffs - LPC a[] coefficients
-   * @param {{ f1: number, f2: number } | null} formants
-   */
   function draw(fftData, sampleRate, lpcCoeffs, formants) {
     const rect = canvas.getBoundingClientRect();
     const w = rect.width;
@@ -129,8 +110,7 @@ export function createSpectrumRenderer(canvas) {
 
     ctx.clearRect(0, 0, w, h);
 
-    // Background
-    ctx.fillStyle = "#12121a";
+    ctx.fillStyle = SPEC_BG;
     ctx.beginPath();
     ctx.roundRect(0, 0, w, h, 8);
     ctx.fill();
@@ -142,7 +122,7 @@ export function createSpectrumRenderer(canvas) {
     const nyquist = sampleRate / 2;
     const maxBin = Math.min(binCount, Math.ceil((FREQ_MAX / nyquist) * binCount));
 
-    // ── FFT spectrum (pink fill) ────────────────────────────────
+    // ── FFT spectrum fill ───────────────────────────────────────
     ctx.beginPath();
     ctx.moveTo(freqToX(0, w), plotBottom);
 
@@ -152,14 +132,12 @@ export function createSpectrumRenderer(canvas) {
       ctx.lineTo(freqToX(freq, w), dbToY(db, h));
     }
 
-    // Close the path along the bottom
     ctx.lineTo(freqToX((maxBin / binCount) * nyquist, w), plotBottom);
     ctx.closePath();
-
-    ctx.fillStyle = "rgba(255, 130, 171, 0.25)";
+    ctx.fillStyle = FFT_FILL;
     ctx.fill();
 
-    // Stroke the top edge
+    // FFT stroke
     ctx.beginPath();
     for (let i = 0; i <= maxBin; i++) {
       const freq = (i / binCount) * nyquist;
@@ -169,7 +147,7 @@ export function createSpectrumRenderer(canvas) {
       if (i === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
     }
-    ctx.strokeStyle = "rgba(255, 130, 171, 0.7)";
+    ctx.strokeStyle = FFT_STROKE;
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
@@ -178,7 +156,6 @@ export function createSpectrumRenderer(canvas) {
       const numPoints = 256;
       const envelope = lpcFrequencyResponse(lpcCoeffs, sampleRate, numPoints, FREQ_MAX);
 
-      // Compute offset: align LPC envelope peak with FFT peak
       const binLo = Math.round((100 / nyquist) * binCount);
       const binHi = Math.min(maxBin, Math.round((4000 / nyquist) * binCount));
       let fftMax = -Infinity;
@@ -202,7 +179,7 @@ export function createSpectrumRenderer(canvas) {
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
-      ctx.strokeStyle = "rgba(96, 165, 250, 0.9)";
+      ctx.strokeStyle = LPC_STROKE;
       ctx.lineWidth = 2;
       ctx.stroke();
       ctx.setLineDash([]);
@@ -222,11 +199,11 @@ export function createSpectrumRenderer(canvas) {
         ctx.beginPath();
         ctx.moveTo(x, SPEC_PADDING.top);
         ctx.lineTo(x, plotBottom);
-        ctx.strokeStyle = "rgba(74, 222, 128, 0.7)";
+        ctx.strokeStyle = FORMANT_LINE;
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
-        ctx.fillStyle = "rgba(74, 222, 128, 0.9)";
+        ctx.fillStyle = FORMANT_TEXT;
         ctx.font = "bold 11px system-ui";
         ctx.textAlign = "center";
         ctx.fillText(`${label}`, x, SPEC_PADDING.top - 5);
