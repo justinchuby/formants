@@ -23,8 +23,8 @@ const LINE_WIDTH = 5;
 // Tongue control bounds (same as Pink Trombone)
 const TONGUE_INDEX_MIN = 12;  // bladeStart + 2
 const TONGUE_INDEX_MAX = 29;  // tipStart - 3
-const TONGUE_DIAMETER_MIN = 2.05;
-const TONGUE_DIAMETER_MAX = 3.5;
+const TONGUE_DIAMETER_MIN = 0.4;
+const TONGUE_DIAMETER_MAX = 2.8;
 
 // Fixed nose diameters (precomputed from Pink Trombone formula)
 const NOSE_DIAMETERS = new Float64Array(NOSE_LENGTH);
@@ -364,7 +364,7 @@ export function formantsToTongue(f1, f2) {
   // F1 maps inversely to tongue diameter (high F1 = open = low diameter)
   // diameter range: 2.05 (open, low tongue) to 3.5 (close, high tongue)
   const f1Norm = Math.max(0, Math.min(1, (f1 - 270) / (730 - 270)));
-  const tongueDiameter = TONGUE_DIAMETER_MAX - f1Norm * (TONGUE_DIAMETER_MAX - TONGUE_DIAMETER_MIN);
+  const tongueDiameter = TONGUE_DIAMETER_MIN + f1Norm * (TONGUE_DIAMETER_MAX - TONGUE_DIAMETER_MIN);
 
   // F2 maps to tongue index (high F2 = front = high index)
   const f2Norm = Math.max(0, Math.min(1, (f2 - 870) / (2290 - 870)));
