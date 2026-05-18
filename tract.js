@@ -191,9 +191,20 @@ function drawTract(ctx, diameters, canvasWidth, canvasHeight) {
   ctx.lineJoin = 'round';
 
   moveTo(ctx, 1, diameters[0]);
+  // Smooth bezier through midpoints for rounded tongue shape
   for (let i = 2; i < TRACT_LENGTH; i++) {
-    lineTo(ctx, i, diameters[i]);
+    const prevA = getAngle(i - 1);
+    const prevR = getRadius(diameters[i - 1]);
+    const curA = getAngle(i);
+    const curR = getRadius(diameters[i]);
+    const cpx = (getX(prevA, prevR) + getX(curA, curR)) / 2;
+    const cpy = (getY(prevA, prevR) + getY(curA, curR)) / 2;
+    ctx.quadraticCurveTo(getX(prevA, prevR), getY(prevA, prevR), cpx, cpy);
   }
+  // Final point
+  const lastA = getAngle(TRACT_LENGTH - 1);
+  const lastR = getRadius(diameters[TRACT_LENGTH - 1]);
+  ctx.lineTo(getX(lastA, lastR), getY(lastA, lastR));
 
   // Outer wall (palate) — with velum gap
   moveTo(ctx, 1, 0);
