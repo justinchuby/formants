@@ -262,8 +262,8 @@ function processAudio() {
   analyserNode.getFloatFrequencyData(fftBuffer);
 
   let result = isSilent ? null : extractFormants(timeDomainBuffer, audioCtx.sampleRate);
-  // Reject non-vowel frames (F1 > 800Hz is likely consonant noise)
-  if (result && result.f1 > 800) result = null;
+  // Reject clearly invalid formant values
+  if (result && (result.f1 > 1000 || result.f1 < 150)) result = null;
 
   // Clear median history during silence to prevent stale values
   if (isSilent) {
