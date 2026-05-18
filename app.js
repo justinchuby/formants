@@ -9,7 +9,7 @@ const CANVAS_H = 480;
 const PADDING = { top: 40, right: 40, bottom: 50, left: 60 };
 
 const F1_MIN = 200;
-const F1_MAX = 1000;
+const F1_MAX = 1100;
 const F2_MIN = 600;
 const F2_MAX = 2500;
 
