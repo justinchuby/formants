@@ -52,6 +52,7 @@ const symbolEl = document.getElementById("vowel-symbol");
 const nameEl = document.getElementById("vowel-name");
 const f1ValueEl = document.getElementById("f1-value");
 const f2ValueEl = document.getElementById("f2-value");
+const f3ValueEl = document.getElementById("f3-value");
 const btnRecord = document.getElementById("btn-record");
 const btnClear = document.getElementById("btn-clear");
 const statusDot = document.getElementById("status-dot");
@@ -290,7 +291,7 @@ function processAudio() {
       smoothF2 = smoothF2 * SMOOTH_ALPHA + result.f2 * (1 - SMOOTH_ALPHA);
     }
 
-    currentFormants = { f1: smoothF1, f2: smoothF2 };
+    currentFormants = { f1: smoothF1, f2: smoothF2, f3: result.f3 || null };
 
     const x = f2ToX(smoothF1 > 0 ? smoothF2 : 0);
     const y = f1ToY(smoothF1);
@@ -305,6 +306,7 @@ function processAudio() {
     nameEl.textContent = vowel.name;
     f1ValueEl.textContent = `${Math.round(smoothF1)} Hz`;
     f2ValueEl.textContent = `${Math.round(smoothF2)} Hz`;
+    if (f3ValueEl) f3ValueEl.textContent = result.f3 ? `${Math.round(result.f3)} Hz` : "—";
 
     const tongue = formantsToTongue(smoothF1, smoothF2);
     tractRenderer.update(tongue.tongueIndex, tongue.tongueDiameter);

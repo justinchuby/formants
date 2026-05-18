@@ -251,7 +251,7 @@ export function getLPCCoefficients(frame, sampleRate, order = 12) {
  * @param {Float32Array} frame - Audio samples (typically 20–30 ms worth)
  * @param {number} sampleRate - Sample rate in Hz
  * @param {number} [lpcOrder=12] - LPC order (12–14 sufficient at 11025 Hz)
- * @returns {{ f1: number, f2: number } | null} Formant frequencies or null
+ * @returns {{ f1: number, f2: number, f3: number|null } | null} Formant frequencies or null
  */
 export function extractFormants(frame, sampleRate, lpcOrder = 12) {
   const prep = prepareFrame(frame, sampleRate);
@@ -288,15 +288,18 @@ export function extractFormants(frame, sampleRate, lpcOrder = 12) {
   // F1 is typically 200–1000 Hz, F2 is 500–3000 Hz
   let f1 = null;
   let f2 = null;
+  let f3 = null;
   for (const f of formants) {
     if (f1 === null && f.freq >= 150 && f.freq <= 1000) {
       f1 = f.freq;
     } else if (f1 !== null && f2 === null && f.freq >= 500 && f.freq <= 3000) {
       f2 = f.freq;
+    } else if (f2 !== null && f3 === null && f.freq >= 1500 && f.freq <= 4500) {
+      f3 = f.freq;
     }
   }
 
   if (f1 === null || f2 === null) return null;
 
-  return { f1, f2 };
+  return { f1, f2, f3 };
 }
