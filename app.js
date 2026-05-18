@@ -284,6 +284,11 @@ function processAudio() {
     const mid = Math.floor(sorted1.length / 2);
     result.f1 = sorted1[mid];
     result.f2 = sorted2[mid];
+    // Rate limiting: reject sudden jumps
+    if (smoothF1 > 0) {
+      if (Math.abs(result.f1 - smoothF1) > 300) result.f1 = smoothF1;
+      if (Math.abs(result.f2 - smoothF2) > 500) result.f2 = smoothF2;
+    }
   }
 
   const lpcCoeffs = getLPCCoefficients(timeDomainBuffer, audioCtx.sampleRate);
