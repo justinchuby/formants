@@ -271,7 +271,7 @@ function processAudio() {
 
   if (!window._f1History) window._f1History = [];
   if (!window._f2History) window._f2History = [];
-  const MEDIAN_LEN = 5;
+  const MEDIAN_LEN = 9;
 
   if (result) {
     window._f1History.push(result.f1);
