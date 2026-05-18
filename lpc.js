@@ -290,7 +290,7 @@ export function extractFormants(frame, sampleRate, lpcOrder = 12) {
   let f2 = null;
   let f3 = null;
   for (const f of formants) {
-    if (f1 === null && f.freq >= 150 && f.freq <= 1000) {
+    if (f1 === null && f.freq >= 100 && f.freq <= 1200) {
       f1 = f.freq;
     } else if (f1 !== null && f2 === null && f.freq >= 500 && f.freq <= 3000) {
       f2 = f.freq;
