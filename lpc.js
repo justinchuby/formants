@@ -225,13 +225,6 @@ export function extractFormants(frame, sampleRate, lpcOrder = 30) {
   // Sort by frequency
   formants.sort((a, b) => a.freq - b.freq);
 
-  // Debug: log formant candidates
-  if (typeof window !== 'undefined' && !window._lpcDebugCount) window._lpcDebugCount = 0;
-  if (typeof window !== 'undefined' && window._lpcDebugCount < 3) {
-    window._lpcDebugCount++;
-    console.log('[LPC] roots found:', roots.length, 'formant candidates:', formants.length, 
-      'candidates:', formants.map(f => f.freq.toFixed(0) + 'Hz(bw:' + f.bandwidth.toFixed(0) + ')').join(', '));
-  }
 
   if (formants.length < 2) return null;
 

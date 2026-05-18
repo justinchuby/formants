@@ -226,52 +226,15 @@ function processAudio() {
   if (!fftBuffer) fftBuffer = new Float32Array(analyserNode.frequencyBinCount);
   analyserNode.getFloatFrequencyData(fftBuffer);
 
-  // Debug: check if this analyserNode is the same as the window one
-  if (!window._checkedAnalyser) {
-    window._checkedAnalyser = true;
-    console.log('[Formants] processAudio analyserNode === window._analyserNode:', analyserNode === window._analyserNode);
-    console.log('[Formants] analyserNode fftSize:', analyserNode?.fftSize);
-    // Try reading directly with a fresh buffer
-    const testBuf = new Float32Array(analyserNode.fftSize);
-    analyserNode.getFloatTimeDomainData(testBuf);
-    let testMax = 0;
-    for (let i = 0; i < testBuf.length; i++) testMax = Math.max(testMax, Math.abs(testBuf[i]));
-    console.log('[Formants] Direct read in processAudio max:', testMax);
+
   }
 
-  // Debug: log first 3 frames
-  if (!window._frameCount) window._frameCount = 0;
-  window._frameCount++;
-  if (window._frameCount <= 3) {
-    let maxVal = 0;
-    for (let i = 0; i < timeDomainBuffer.length; i++) {
-      const abs = Math.abs(timeDomainBuffer[i]);
-      if (abs > maxVal) maxVal = abs;
-    }
-    console.log(`[Formants] Frame ${window._frameCount}: bufferLen=${timeDomainBuffer.length}, maxVal=${maxVal.toFixed(8)}, sampleRate=${audioCtx.sampleRate}`);
-  }
-
-  // Debug: check if we are getting data
-  let maxVal = 0;
-  for (let i = 0; i < timeDomainBuffer.length; i++) {
-    const abs = Math.abs(timeDomainBuffer[i]);
-    if (abs > maxVal) maxVal = abs;
-  }
-  if (maxVal < 1e-10 && !window._warnedSilence) {
-    console.warn("[Formants] Audio buffer is all zeros. Mic may not be working. Max value:", maxVal);
-    window._warnedSilence = true;
-  }
 
   const result = extractFormants(timeDomainBuffer, audioCtx.sampleRate);
 
   // Get LPC coefficients for spectrum envelope
   const lpcCoeffs = getLPCCoefficients(timeDomainBuffer, audioCtx.sampleRate);
 
-  if (!window._lpcLogCount) window._lpcLogCount = 0;
-  if (window._lpcLogCount < 5) {
-    window._lpcLogCount++;
-    console.log('[Formants] LPC result:', result, 'maxVal:', Math.max(...Array.from(timeDomainBuffer).map(Math.abs)).toFixed(6));
-  }
 
   if (result) {
     // Apply smoothing
@@ -303,7 +266,6 @@ function processAudio() {
 
     // Update vocal tract
     const tongue = formantsToTongue(smoothF1, smoothF2);
-    console.log("[Formants] tract update:", tongue.tongueIndex.toFixed(1), tongue.tongueDiameter.toFixed(2));
     tractRenderer.update(tongue.tongueIndex, tongue.tongueDiameter);
   } else {
     currentFormants = null;
@@ -350,9 +312,6 @@ async function startRecording() {
     silentGain.gain.value = 0;
     analyserNode.connect(silentGain);
     silentGain.connect(audioCtx.destination);
-    window._audioCtx = audioCtx;
-    window._sourceNode = sourceNode;
-    window._analyserNode = analyserNode;
 
     isRecording = true;
     smoothF1 = 0;
@@ -414,8 +373,6 @@ btnClear.addEventListener("click", () => {
 // ── Tract renderer ──────────────────────────────────────────────
 const tractCanvas = document.getElementById("tract");
 const tractRenderer = createTractRenderer(tractCanvas);
-console.log("[Formants] Tract canvas:", tractCanvas, "size:", tractCanvas?.width, "x", tractCanvas?.height);
-console.log("[Formants] Tract renderer:", tractRenderer);
 
 // ── Spectrum renderer ───────────────────────────────────────────
 const spectrumCanvas = document.getElementById("spectrum");
