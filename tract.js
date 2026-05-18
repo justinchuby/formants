@@ -47,12 +47,12 @@ function getY(angle, r) {
 
 function computeDiameters(tongueIndex, tongueDiameter) {
   const d = new Float64Array(TRACT_LENGTH);
-  for (let i = 0; i < TRACT_LENGTH; i++) {
+  for (let i = 12; i < TRACT_LENGTH - 1; i++) {
     if (i < 7) d[i] = 0.6;
     else if (i < 12) d[i] = 1.1;
     else d[i] = 1.5;
   }
-  for (let i = 0; i < TRACT_LENGTH; i++) {
+  for (let i = 12; i < TRACT_LENGTH - 1; i++) {
     const dist = Math.abs(i - tongueIndex);
     const influence = Math.max(0, 1 - dist / 8);
     const gaussian = influence * influence;
