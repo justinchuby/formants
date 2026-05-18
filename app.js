@@ -222,11 +222,19 @@ function processAudio() {
 
   analyserNode.getFloatTimeDomainData(timeDomainBuffer);
 
+  // Skip if signal is too quiet (noise floor)
+  let rms = 0;
+  for (let i = 0; i < timeDomainBuffer.length; i++) {
+    rms += timeDomainBuffer[i] * timeDomainBuffer[i];
+  }
+  rms = Math.sqrt(rms / timeDomainBuffer.length);
+  const isSilent = rms < 0.01; // ~-40 dB threshold
+
   // Get FFT frequency data for spectrum display
   if (!fftBuffer) fftBuffer = new Float32Array(analyserNode.frequencyBinCount);
   analyserNode.getFloatFrequencyData(fftBuffer);
 
-  const result = extractFormants(timeDomainBuffer, audioCtx.sampleRate);
+  const result = isSilent ? null : extractFormants(timeDomainBuffer, audioCtx.sampleRate);
 
   // Get LPC coefficients for spectrum envelope
   const lpcCoeffs = getLPCCoefficients(timeDomainBuffer, audioCtx.sampleRate);
