@@ -210,14 +210,14 @@ export function extractFormants(frame, sampleRate, lpcOrder = 30) {
     if (root.im < 0) continue; // Only positive frequencies (conjugate pairs)
 
     const mag = Math.hypot(root.re, root.im);
-    if (mag < 0.5 || mag > 1.0) continue; // Reject unstable/too-damped roots
+    if (mag < 0.3 || mag > 1.0) continue; // Reject unstable/too-damped roots
 
     const angle = Math.atan2(root.im, root.re);
     const freq = (angle * sampleRate) / (2 * Math.PI);
     const bandwidth = (-Math.log(mag) * sampleRate) / Math.PI;
 
     // Reject if bandwidth too wide (> 400 Hz) or frequency out of range
-    if (freq > 50 && freq < sampleRate / 2 && bandwidth < 400) {
+    if (freq > 50 && freq < sampleRate / 2 && bandwidth < 600) {
       formants.push({ freq, bandwidth });
     }
   }
