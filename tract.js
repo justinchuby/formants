@@ -76,7 +76,7 @@ function computeDiameters(tongueIndex, tongueDiameter) {
   // Tongue influence (gaussian-ish, same as Pink Trombone)
   // Pink Trombone uses: diameter = fixedDiameter + tongueCurve
   // where tongueCurve is based on distance from tongueIndex
-  const tongueWidth = 8; // approximate influence width
+  const tongueWidth = 14; // approximate influence width
   for (let i = TONGUE_INDEX_MIN - 4; i < TRACT_LENGTH; i++) {
     if (i === 0) continue;
     const dist = Math.abs(i - tongueIndex);
