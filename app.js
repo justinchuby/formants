@@ -4,9 +4,9 @@ import { createTractRenderer, formantsToTongue } from "./tract.js";
 import { createSpectrumRenderer } from "./spectrum.js";
 
 // ── Chart configuration ──────────────────────────────────────────
-const CANVAS_W = 520;
+const CANVAS_W = 550;
 const CANVAS_H = 480;
-const PADDING = { top: 40, right: 40, bottom: 50, left: 60 };
+const PADDING = { top: 40, right: 55, bottom: 50, left: 60 };
 
 const F1_MIN = 200;
 const F1_MAX = 1100;
