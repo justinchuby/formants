@@ -22,7 +22,7 @@ const LINE_WIDTH = 5;
 
 // Tongue control bounds (same as Pink Trombone)
 const TONGUE_INDEX_MIN = 12;  // bladeStart + 2
-const TONGUE_INDEX_MAX = 29;  // tipStart - 3
+const TONGUE_INDEX_MAX = 36;  // allow tongue to reach near lip
 const TONGUE_DIAMETER_MIN = 0.4;
 const TONGUE_DIAMETER_MAX = 2.8;
 
