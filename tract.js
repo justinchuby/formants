@@ -64,10 +64,10 @@ function computeDiameters(tongueIndex, tongueDiameter) {
   for (let i = 0; i < TRACT_LENGTH; i++) {
     if (i < 7) {
       // Throat/glottis region: fixed narrow
-      d[i] = 0.6;
+      d[i] = 1.0;
     } else if (i < 11) {
       // Epiglottis transition
-      d[i] = 1.1;
+      d[i] = 1.2;
     } else {
       d[i] = 1.5;
     }
