@@ -94,7 +94,7 @@ function getAngle(index) {
 }
 
 function getRadius(diameter) {
-  return RADIUS - SCALE * diameter;
+  return RADIUS - SCALE * (3.5 - diameter);
 }
 
 function toXY(index, diameter) {
