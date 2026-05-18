@@ -95,9 +95,9 @@ header p {
 .tract-container {
 }
 #tract {
-  width: 400px;
-  height: 340px;
-  max-width: 100%;
+  width: 100%;
+  max-width: 500px;
+  aspect-ratio: 600 / 500;
 }
 
 .tract-label {

@@ -68,18 +68,22 @@ modalOverlay.addEventListener("click", (e) => {
   if (e.target === modalOverlay) modalOverlay.classList.remove("visible");
 });
 
-// ── Start overlay (click-to-start) ───────────────────────────────
+// ── Auto-start ────────────────────────────────────────────────────
 const startOverlay = document.getElementById("start-overlay");
 let hasStarted = false;
 let isPaused = false;
 
-startOverlay.addEventListener("click", async () => {
+// Auto-start recording on page load (user interaction still needed for mic permission)
+async function autoStart() {
   if (hasStarted) return;
   hasStarted = true;
-  startOverlay.classList.add("hidden");
-  setTimeout(() => { startOverlay.style.display = "none"; }, 300);
+  if (startOverlay) {
+    startOverlay.classList.add("hidden");
+    setTimeout(() => { startOverlay.style.display = "none"; }, 300);
+  }
   await startRecording();
-});
+}
+autoStart();
 
 // ── Coordinate mapping ──────────────────────────────────────────
 function f2ToX(f2) {
