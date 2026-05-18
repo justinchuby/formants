@@ -158,16 +158,15 @@ export function createSpectrumRenderer(canvas) {
 
       const binLo = Math.round((100 / nyquist) * binCount);
       const binHi = Math.min(maxBin, Math.round((4000 / nyquist) * binCount));
-      let fftMax = -Infinity;
-      for (let i = binLo; i <= binHi; i++) {
-        if (fftData[i] > fftMax) fftMax = fftData[i];
-      }
+      // Align using average of top N peaks (more stable than single max)
+      const fftSlice = [];
+      for (let i = binLo; i <= binHi; i++) fftSlice.push(fftData[i]);
+      fftSlice.sort((a, b) => b - a);
+      const fftTop = fftSlice.slice(0, 10).reduce((s, v) => s + v, 0) / 10;
 
-      let lpcMax = -Infinity;
-      for (let i = 0; i < numPoints; i++) {
-        if (envelope[i] > lpcMax) lpcMax = envelope[i];
-      }
-      const offset = fftMax - lpcMax;
+      const envSlice = [...envelope].sort((a, b) => b - a);
+      const lpcTop = envSlice.slice(0, 5).reduce((s, v) => s + v, 0) / 5;
+      const offset = fftTop - lpcTop;
 
       ctx.beginPath();
       ctx.setLineDash([6, 4]);
