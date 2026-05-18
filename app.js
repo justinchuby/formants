@@ -226,10 +226,6 @@ function processAudio() {
   if (!fftBuffer) fftBuffer = new Float32Array(analyserNode.frequencyBinCount);
   analyserNode.getFloatFrequencyData(fftBuffer);
 
-
-  }
-
-
   const result = extractFormants(timeDomainBuffer, audioCtx.sampleRate);
 
   // Get LPC coefficients for spectrum envelope
