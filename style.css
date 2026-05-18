@@ -124,6 +124,10 @@ canvas {
 }
 
 .current-vowel {
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -476,6 +480,10 @@ button:disabled {
   }
 
   .current-vowel {
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
     padding: 1rem;
   }
 
