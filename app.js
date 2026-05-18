@@ -236,6 +236,25 @@ function processAudio() {
 
   const result = isSilent ? null : extractFormants(timeDomainBuffer, audioCtx.sampleRate);
 
+  // Median filter: reject outlier frames
+  if (!window._f1History) window._f1History = [];
+  if (!window._f2History) window._f2History = [];
+  const MEDIAN_LEN = 5;
+
+  if (result) {
+    window._f1History.push(result.f1);
+    window._f2History.push(result.f2);
+    if (window._f1History.length > MEDIAN_LEN) window._f1History.shift();
+    if (window._f2History.length > MEDIAN_LEN) window._f2History.shift();
+
+    // Use median instead of raw value
+    const sorted1 = [...window._f1History].sort((a, b) => a - b);
+    const sorted2 = [...window._f2History].sort((a, b) => a - b);
+    const mid = Math.floor(sorted1.length / 2);
+    result.f1 = sorted1[mid];
+    result.f2 = sorted2[mid];
+  }
+
   // Get LPC coefficients for spectrum envelope
   const lpcCoeffs = getLPCCoefficients(timeDomainBuffer, audioCtx.sampleRate);
 
