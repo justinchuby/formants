@@ -67,9 +67,10 @@ export function findNearestVowel(f1, f2, f3 = null) {
       best = v;
     }
   }
-  // Add diacritics for precision based on offset from reference
+  // Add diacritics only when significantly offset from nearest vowel
+  // If very close to a reference point, no need for diacritics
   let diacritics = '';
-  if (best) {
+  if (best && bestDist > 0.15) {
     const f1Diff = f1 - best.f1;
     const f2Diff = f2 - best.f2;
     // F1 offset: positive = more open, negative = more close
