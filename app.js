@@ -243,7 +243,7 @@ const timeDomainBuffer = new Float32Array(FRAME_SIZE * 2);
 
 let smoothF1 = 0;
 let smoothF2 = 0;
-const SMOOTH_ALPHA = 0.35;
+const SMOOTH_ALPHA = 0.5;
 
 function processAudio() {
   if (!isRecording) return;
@@ -269,23 +269,31 @@ function processAudio() {
   if (isSilent) {
     window._f1History = [];
     window._f2History = [];
+    window._f3History = [];
   }
 
   if (!window._f1History) window._f1History = [];
   if (!window._f2History) window._f2History = [];
+  if (!window._f3History) window._f3History = [];
   const MEDIAN_LEN = 9;
 
   if (result) {
     window._f1History.push(result.f1);
     window._f2History.push(result.f2);
+    if (result.f3) window._f3History.push(result.f3);
     if (window._f1History.length > MEDIAN_LEN) window._f1History.shift();
     if (window._f2History.length > MEDIAN_LEN) window._f2History.shift();
+    if (window._f3History.length > MEDIAN_LEN) window._f3History.shift();
 
     const sorted1 = [...window._f1History].sort((a, b) => a - b);
     const sorted2 = [...window._f2History].sort((a, b) => a - b);
     const mid = Math.floor(sorted1.length / 2);
     result.f1 = sorted1[mid];
     result.f2 = sorted2[mid];
+    if (window._f3History.length >= 3 && result.f3) {
+      const sorted3 = [...window._f3History].sort((a, b) => a - b);
+      result.f3 = sorted3[Math.floor(sorted3.length / 2)];
+    }
     // Rate limiting: cap speed of change (allows transition but not teleportation)
     if (smoothF1 > 0) {
       const maxDeltaF1 = 150; // Hz per frame
