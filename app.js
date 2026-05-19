@@ -315,8 +315,8 @@ function processAudio() {
       tracePoints.shift();
     }
 
-    const { vowel } = findNearestVowel(smoothF1, smoothF2, result.f3 || null);
-    symbolEl.textContent = vowel.symbol;
+    const { vowel, diacritics } = findNearestVowel(smoothF1, smoothF2, result.f3 || null);
+    symbolEl.textContent = vowel.symbol + (diacritics || "");
     symbolEl.classList.remove("silent");
     nameEl.textContent = vowel.name;
     f1ValueEl.textContent = `${Math.round(smoothF1)} Hz`;

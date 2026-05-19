@@ -67,5 +67,24 @@ export function findNearestVowel(f1, f2, f3 = null) {
       best = v;
     }
   }
-  return { vowel: best, distance: bestDist };
+  // Add diacritics for precision based on offset from reference
+  let diacritics = '';
+  if (best) {
+    const f1Diff = f1 - best.f1;
+    const f2Diff = f2 - best.f2;
+    // F1 offset: positive = more open, negative = more close
+    if (f1Diff > 60) diacritics += '̞'; // ̞ (lowered/more open)
+    else if (f1Diff < -60) diacritics += '̝'; // ̝ (raised/more close)
+    // F2 offset: positive = more front, negative = more back
+    if (f2Diff > 150) diacritics += '̟'; // ̟ (advanced/more front)
+    else if (f2Diff < -150) diacritics += '̠'; // ̠ (retracted/more back)
+    // F3 rounding: if F3 provided and vowel is unrounded but F3 is low → add rounded diacritic
+    if (f3 !== null && best.f3) {
+      const f3Diff = f3 - best.f3;
+      if (f3Diff < -200 && !best.name.includes('rounded')) diacritics += '̹'; // ̹ (more rounded)
+      else if (f3Diff > 200 && best.name.includes('rounded')) diacritics += '̜'; // ̜ (less rounded)
+    }
+  }
+
+  return { vowel: best, distance: bestDist, diacritics };
 }
